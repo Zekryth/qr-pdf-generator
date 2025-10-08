@@ -41,16 +41,23 @@ jobs:
     - name: Install dependencies
       run: |
         npm ci
-        npm install -g @expo/cli
+        npm install -g @expo/cli eas-cli
+    
+    # Fix expo-router issue
+    - name: Remove expo-router dependency
+      run: |
+        npm uninstall expo-router @expo/metro-runtime
+        rm -rf app/ || true
     
     # 6. Prebuild para Android
     - name: Expo prebuild
-      run: npx expo prebuild --platform android
+      run: npx expo prebuild --platform android --clear
     
     # 7. Build APK
     - name: Build APK
       run: |
         cd android
+        chmod +x ./gradlew
         ./gradlew assembleRelease
     
     # 8. Subir APK como artifact
