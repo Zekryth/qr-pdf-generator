@@ -1,27 +1,27 @@
-import React, { useRef, useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  SafeAreaView,
-  ScrollView,
-  Modal,
-  Linking,
-  Platform,
-  TextInput,
-} from 'react-native';
+import { BarCodeScanner } from 'expo-barcode-scanner';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
 import * as MediaLibrary from 'expo-media-library';
-import { BarCodeScanner } from 'expo-barcode-scanner';
-import { WebView } from 'react-native-webview';
+import * as Sharing from 'expo-sharing';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Alert,
+  Linking,
+  Modal,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
+import { WebView } from 'react-native-webview';
 import { v4 as uuidv4 } from 'uuid';
 
-// Servicio simplificado para Google Drive
+// Servicio para Google Drive
 const uploadPdfToGoogleDrive = async (localUri, fileName) => {
   try {
     const uniqueId = uuidv4().substring(0, 8);
@@ -64,7 +64,9 @@ const App = () => {
     (async () => {
       try {
         await MediaLibrary.requestPermissionsAsync();
-      } catch {}
+      } catch (error) {
+        console.log('Error requesting permissions:', error);
+      }
     })();
   }, []);
 
@@ -75,6 +77,7 @@ const App = () => {
         multiple: false,
         copyToCacheDirectory: true,
       });
+      
       if (result.canceled) return;
 
       const asset = Array.isArray(result.assets) ? result.assets[0] : result;
@@ -85,9 +88,7 @@ const App = () => {
         return;
       }
 
-      const safeName =
-        (name && name.replace(/[^\w.\-]+/g, '_')) ||
-        `documento_${Date.now()}.pdf`;
+      const safeName = (name && name.replace(/[^\w.\-]+/g, '_')) || `documento_${Date.now()}.pdf`;
       const destUri = FileSystem.documentDirectory + safeName;
 
       try {
@@ -102,7 +103,11 @@ const App = () => {
         }
       }
 
-      setSelectedPdf({ name: safeName, uri: destUri, mimeType: mimeType || 'application/pdf' });
+      setSelectedPdf({ 
+        name: safeName, 
+        uri: destUri, 
+        mimeType: mimeType || 'application/pdf' 
+      });
       setQrValue('');
       setGoogleDriveUrl('');
     } catch (e) {
@@ -122,7 +127,7 @@ const App = () => {
       
       Alert.alert(
         'Sube a Google Drive',
-        '1. Selecciona Google Drive en el menú\n2. Súbelo como público\n3. Copia el enlace de compartir\n4. Pégalo en la app\n\nTip: Haz clic derecho → "Obtener enlace" → "Cualquier persona con el enlace"',
+        '1. Selecciona Google Drive en el menú\n2. Súbelo como público\n3. Copia el enlace de compartir\n4. Pégalo en la app\n\n💡 Tip: Haz clic derecho → "Obtener enlace" → "Cualquier persona con el enlace"',
         [
           { text: 'Entendido', onPress: () => setShowUrlInput(true) }
         ]
@@ -141,6 +146,7 @@ const App = () => {
 
     let directUrl = googleDriveUrl.trim();
     
+    // Convertir enlace de Google Drive a vista directa
     if (directUrl.includes('drive.google.com/file/d/')) {
       const fileIdMatch = directUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
       if (fileIdMatch) {
@@ -160,7 +166,7 @@ const App = () => {
     setQrValue(JSON.stringify(payload));
     setShowUrlInput(false);
     
-    Alert.alert('QR Generado', 'El código QR ya contiene el enlace de Google Drive. ¡Compártelo!');
+    Alert.alert('QR Generado', 'El código QR ya contiene el enlace de Google Drive. ¡Compártelo! 🚀');
   };
 
   const generateQr = async () => {
@@ -210,7 +216,7 @@ const App = () => {
       const fileUri = await toPngFile();
       const asset = await MediaLibrary.createAssetAsync(fileUri);
       await MediaLibrary.createAlbumAsync('QR Codes', asset, false);
-      Alert.alert('Guardado', 'Imagen PNG guardada en el álbum "QR Codes".');
+      Alert.alert('Guardado', 'Imagen PNG guardada en el álbum "QR Codes". 📱');
     } catch (e) {
       console.error(e);
       Alert.alert('Error', 'No se pudo guardar la imagen PNG.');
@@ -260,6 +266,7 @@ const App = () => {
           Alert.alert('No encontrado', 'El PDF referenciado no existe en este dispositivo.');
           return;
         }
+        
         const opened = await Linking.openURL(obj.localUri).catch(() => false);
         if (!opened) {
           if (await Sharing.isAvailableAsync()) {
@@ -269,7 +276,7 @@ const App = () => {
           }
         }
       } else {
-        Alert.alert('QR no válido', 'Este QR no pertenece a la app.');
+        Alert.alert('QR no válido', 'Este QR no pertenece a la app QR PDF Generator.');
       }
     } catch (error) {
       console.error(error);
@@ -289,7 +296,8 @@ const App = () => {
   return (
     <SafeAreaView style={styles.safe} testID="app-root">
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>QR PDF Generator</Text>
+        <Text style={styles.title}>📱 QR PDF Generator</Text>
+        <Text style={styles.subtitle}>by Zekryth</Text>
 
         <TouchableOpacity style={styles.modeToggle} onPress={toggleCloudMode}>
           <Text style={styles.modeToggleText}>
@@ -298,7 +306,7 @@ const App = () => {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.buttonPrimary} onPress={pickPdf}>
-          <Text style={styles.buttonText}>Seleccionar PDF</Text>
+          <Text style={styles.buttonText}>📄 Seleccionar PDF</Text>
         </TouchableOpacity>
 
         {selectedPdf?.name ? (
@@ -315,13 +323,13 @@ const App = () => {
           disabled={!selectedPdf}
         >
           <Text style={styles.buttonText}>
-            {cloudMode ? 'Compartir a Google Drive' : 'Generar QR'}
+            {cloudMode ? '☁️ Compartir a Google Drive' : '🔲 Generar QR'}
           </Text>
         </TouchableOpacity>
 
         {showUrlInput && (
           <View style={styles.urlInputContainer}>
-            <Text style={styles.urlInputLabel}>Pega el enlace de Google Drive:</Text>
+            <Text style={styles.urlInputLabel}>🔗 Pega el enlace de Google Drive:</Text>
             <TextInput
               style={styles.urlInput}
               value={googleDriveUrl}
@@ -332,17 +340,17 @@ const App = () => {
             />
             <View style={styles.urlInputButtons}>
               <TouchableOpacity 
-                style={styles.buttonSecondary} 
+                style={[styles.buttonSecondary, !googleDriveUrl.trim() && styles.buttonDisabled]} 
                 onPress={generateQrFromUrl}
                 disabled={!googleDriveUrl.trim()}
               >
-                <Text style={styles.buttonText}>Generar QR</Text>
+                <Text style={styles.buttonText}>🚀 Generar QR</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.buttonGhost} 
                 onPress={() => setShowUrlInput(false)}
               >
-                <Text style={styles.buttonGhostText}>Cancelar</Text>
+                <Text style={styles.buttonGhostText}>❌ Cancelar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -373,7 +381,9 @@ const App = () => {
             onPress={savePng}
             disabled={!qrValue || saving}
           >
-            <Text style={styles.buttonText}>{saving ? 'Guardando…' : 'Guardar PNG'}</Text>
+            <Text style={styles.buttonText}>
+              {saving ? '💾 Guardando…' : '💾 Guardar PNG'}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -381,21 +391,22 @@ const App = () => {
             onPress={sharePng}
             disabled={!qrValue}
           >
-            <Text style={styles.buttonText}>Compartir</Text>
+            <Text style={styles.buttonText}>🔄 Compartir</Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.buttonGhost} onPress={openScanner}>
-          <Text style={styles.buttonGhostText}>Modo lector (escanear QR)</Text>
+          <Text style={styles.buttonGhostText}>📷 Modo lector (escanear QR)</Text>
         </TouchableOpacity>
       </ScrollView>
 
+      {/* Modal Escáner QR */}
       <Modal visible={scannerOpen} animationType="slide">
         <SafeAreaView style={styles.scannerSafe}>
           <View style={styles.scannerHeader}>
-            <Text style={styles.scannerTitle}>Escanear QR</Text>
+            <Text style={styles.scannerTitle}>📷 Escanear QR</Text>
             <TouchableOpacity onPress={() => setScannerOpen(false)}>
-              <Text style={styles.close}>Cerrar</Text>
+              <Text style={styles.close}>❌ Cerrar</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.scannerBody}>
@@ -411,12 +422,13 @@ const App = () => {
         </SafeAreaView>
       </Modal>
 
+      {/* Modal Visor PDF */}
       <Modal visible={viewerOpen} animationType="slide">
         <SafeAreaView style={styles.viewerSafe}>
           <View style={styles.viewerHeader}>
-            <Text style={styles.viewerTitle}>Visor de PDF</Text>
+            <Text style={styles.viewerTitle}>📄 Visor de PDF</Text>
             <TouchableOpacity onPress={() => setViewerOpen(false)}>
-              <Text style={styles.close}>Cerrar</Text>
+              <Text style={styles.close}>❌ Cerrar</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.viewerBody}>
@@ -439,6 +451,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f7f8fa' },
   container: { alignItems: 'center', padding: 20, gap: 14 },
   title: { fontSize: 24, fontWeight: '700', color: '#222', marginVertical: 8 },
+  subtitle: { fontSize: 14, color: '#666', marginBottom: 10 },
   hint: { color: '#666', fontSize: 14, textAlign: 'center' },
   filename: { color: '#333', fontSize: 14, textAlign: 'center', paddingHorizontal: 12 },
   modeToggle: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: '#e0e0e0', marginBottom: 8 },

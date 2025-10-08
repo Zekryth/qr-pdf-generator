@@ -1,0 +1,74 @@
+name: Build Android APK
+
+# Manual trigger - tú decides cuándo ejecutar
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version name for APK'
+        required: false
+        default: 'v1.0'
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    
+    steps:
+    # 1. Checkout del código
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    # 2. Setup Node.js
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    # 3. Setup Java (necesario para Android)
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    # 4. Setup Android SDK
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+    
+    # 5. Instalar dependencias
+    - name: Install dependencies
+      run: |
+        npm ci
+        npm install -g @expo/cli
+    
+    # 6. Prebuild para Android
+    - name: Expo prebuild
+      run: npx expo prebuild --platform android --clear
+    
+    # 7. Build APK
+    - name: Build APK
+      run: |
+        cd android
+        ./gradlew assembleRelease
+    
+    # 8. Subir APK como artifact
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: qr-pdf-generator-${{ github.event.inputs.version || 'v1.0' }}.apk
+        path: android/app/build/outputs/apk/release/app-release.apk
+        retention-days: 30
+
+  # Job adicional para notificar éxito
+  notify:
+    needs: build
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+    - name: Build Success
+      run: |
+        echo "✅ APK construido exitosamente!"
+        echo "📱 Descarga desde la sección 'Artifacts'"
+        echo "🚀 Tu app QR PDF Generator está lista!"
