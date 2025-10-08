@@ -45,7 +45,7 @@ jobs:
     
     # 6. Prebuild para Android
     - name: Expo prebuild
-      run: npx expo prebuild --platform android --clear
+      run: npx expo prebuild --platform android
     
     # 7. Build APK
     - name: Build APK
