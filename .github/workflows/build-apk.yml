@@ -41,26 +41,27 @@ jobs:
     - name: Install dependencies
       run: |
         npm ci
-        npm install -g @expo/cli eas-cli
+        npm install -g @expo/cli
+        npx expo install --fix
     
-    # Fix expo-router issue
-    - name: Remove expo-router dependency
+    # 6. Limpiar builds previos
+    - name: Clean previous builds
       run: |
-        npm uninstall expo-router @expo/metro-runtime
-        rm -rf app/ || true
+        rm -rf android || true
+        rm -rf ios || true
     
-    # 6. Prebuild para Android
+    # 7. Prebuild para Android (sin --clear)
     - name: Expo prebuild
-      run: npx expo prebuild --platform android --clear
+      run: npx expo prebuild --platform android
     
-    # 7. Build APK
+    # 8. Build APK
     - name: Build APK
       run: |
         cd android
         chmod +x ./gradlew
         ./gradlew assembleRelease
     
-    # 8. Subir APK como artifact
+    # 9. Subir APK como artifact
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
@@ -77,5 +78,5 @@ jobs:
     - name: Build Success
       run: |
         echo "✅ APK construido exitosamente!"
-        echo "📱 Descarga desde la sección 'Artifacts'"
-        echo "🚀 Tu app QR PDF Generator está lista!"
+        echo "📱 Descarga desde Artifacts en GitHub Actions"
+        echo "🚀 QR PDF Generator by Zekryth está listo!"
